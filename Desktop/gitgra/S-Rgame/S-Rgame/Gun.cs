@@ -2,34 +2,82 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Gun : MonoBehaviour {
+public class Gun : MonoBehaviour
+{
 
-    public Transform muzzle;
+
+    public enum FireMode
+    {
+        Auto,
+        Burst,
+        Single
+    };
+
+    public FireMode fireMode;
+
+    public Transform[] projectileSpawn;
     public Projectile projectile;
     public float msBetweenShots = 100; //milisekundy = 8 bullets
     public float muzzleVelocity = 35;
+    public int burstCount;
 
     public Transform shell;
     public Transform shellEjection;
     MuzzleFlash muzzleflash;
+    float nextShotTime;
+
+    bool triggerReleasedSinceLastShot;
+    private int shotsRemainingInBurst;
 
     void Start()
     {
         muzzleflash = GetComponent<MuzzleFlash>();
+        shotsRemainingInBurst = burstCount;
     }
 
-    float nextShotTime;
-
-    public void Shoot()
+    void Shoot()
     {
         if (Time.time > nextShotTime)
         {
-            nextShotTime = Time.time + msBetweenShots / 1000; //czas miedzy shot
-            Projectile newProjectile = Instantiate(projectile, muzzle.position, muzzle.rotation) as Projectile;
-            newProjectile.SetSpeed(muzzleVelocity);
+            if (fireMode == FireMode.Burst)
+            {
+                if (shotsRemainingInBurst == 0)
+                {
+                    return;
+                }
+                shotsRemainingInBurst--;
+            }
+            else if (fireMode == FireMode.Single)
+            {
+                if (!triggerReleasedSinceLastShot)
+                {
+                    return;
+                }
+            }
 
-            Instantiate(shell,shellEjection.position, shellEjection.rotation);
-            muzzleflash.Activate();
+            for (int i = 0; i < projectileSpawn.Length; i++)
+            {
+                nextShotTime = Time.time + msBetweenShots / 1000; //czas miedzy shot
+                Projectile newProjectile =
+                    Instantiate(projectile, projectileSpawn[i].position, projectileSpawn[i].rotation) as Projectile;
+                newProjectile.SetSpeed(muzzleVelocity);
+            }
+
+            //Instantiate(shell, shellEjection.position, shellEjection.rotation);
+                //muzzleflash.Activate();
+            
         }
+    }
+
+    public void OnTriggerHold()
+    {
+        Shoot();
+        triggerReleasedSinceLastShot = false;
+    }
+
+    public void OnTriggerRelease()
+    {
+        triggerReleasedSinceLastShot = true;
+        shotsRemainingInBurst = burstCount;
     }
 }
