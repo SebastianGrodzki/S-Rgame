@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework.Constraints;
@@ -74,5 +75,11 @@ public class Player : LivingEntity
         {
             gunController.Reload();
         }
+    }
+
+    public override void Die()  //die sound
+    {
+        AudioManager.instance.PlaySound("Player Death", transform.position);
+        base.Die();
     }
 }
